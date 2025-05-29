@@ -23,6 +23,11 @@
     <p class="text-sm text-red-400 italic mb-4">by DarkFlarePlays8</p>
     <p class="text-red-300 mb-4">Upload a <code>.mrpack</code> file or paste a direct URL</p>
 
+    <!-- Drag and Drop Area -->
+    <div id="dropZone" class="w-full p-6 mb-3 border-2 border-dashed border-orange-600 rounded-lg text-orange-400 text-sm cursor-pointer hover:bg-orange-900/40 transition duration-200">
+      🚀 Drag & drop your <code>.mrpack</code> file here
+    </div>
+
     <!-- File Upload -->
     <label for="fileInput" class="sr-only">Upload .mrpack file</label>
     <input
@@ -75,22 +80,22 @@
     const convertBtn = document.getElementById("convertBtn");
     const downloadBtn = document.getElementById("downloadBtn");
     const status = document.getElementById("status");
+    const dropZone = document.getElementById("dropZone");
 
     let zipBlob = null;
     let zipName = "";
 
-function isValidURL(str) {
-  try {
-    const url = new URL(str);
-    const hasValidProtocol = url.protocol === "http:" || url.protocol === "https:";
-    const hostnameParts = url.hostname.split(".");
-    const hasTLD = hostnameParts.length > 1 && hostnameParts[hostnameParts.length - 1].length >= 2;
-    return hasValidProtocol && hasTLD;
-  } catch {
-    return false;
-  }
-}
-
+    function isValidURL(str) {
+      try {
+        const url = new URL(str);
+        const hasValidProtocol = url.protocol === "http:" || url.protocol === "https:";
+        const hostnameParts = url.hostname.split(".");
+        const hasTLD = hostnameParts.length > 1 && hostnameParts[hostnameParts.length - 1].length >= 2;
+        return hasValidProtocol && hasTLD;
+      } catch {
+        return false;
+      }
+    }
 
     function validateInputs() {
       if (fileInput.files.length > 0) {
@@ -135,6 +140,34 @@ function isValidURL(str) {
     fileInput.addEventListener("change", updateButtonState);
     urlInput.addEventListener("input", updateButtonState);
     convertBtn.addEventListener("click", convert);
+
+    // Drag and drop logic
+    ["dragenter", "dragover"].forEach(event => {
+      dropZone.addEventListener(event, e => {
+        e.preventDefault();
+        dropZone.classList.add("bg-orange-900/30");
+      });
+    });
+
+    ["dragleave", "drop"].forEach(event => {
+      dropZone.addEventListener(event, e => {
+        e.preventDefault();
+        dropZone.classList.remove("bg-orange-900/30");
+      });
+    });
+
+    dropZone.addEventListener("drop", e => {
+      const files = e.dataTransfer.files;
+      if (files.length) {
+        const file = files[0];
+        if (file.name.toLowerCase().endsWith(".mrpack")) {
+          fileInput.files = files;
+          updateButtonState();
+        } else {
+          status.textContent = "❌ Please upload a valid .mrpack file.";
+        }
+      }
+    });
 
     async function convert() {
       status.textContent = "📦 Reading MRPack...";
@@ -235,16 +268,14 @@ function isValidURL(str) {
   </script>
 
   <a
-  href="https://github.com/darkflareplays8/mrpacktozip"
-  target="_blank"
-  class="fixed bottom-4 left-4 bg-black/30 backdrop-blur-lg rounded-xl border border-red-600 shadow-2xl text-orange-400 px-4 py-2 text-sm font-bold glow hover:scale-105 hover:shadow-xl transition duration-200 flex items-center gap-2"
->
-  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-orange-400" viewBox="0 0 24 24">
-    <path d="M12 .5C5.73.5.5 5.73.5 12.02c0 5.11 3.29 9.45 7.86 10.98.58.11.79-.25.79-.56 0-.28-.01-1.01-.02-1.99-3.2.7-3.88-1.54-3.88-1.54-.53-1.36-1.29-1.73-1.29-1.73-1.05-.72.08-.71.08-.71 1.17.08 1.79 1.2 1.79 1.2 1.04 1.78 2.74 1.26 3.41.96.11-.76.41-1.26.74-1.55-2.55-.29-5.23-1.28-5.23-5.69 0-1.26.45-2.29 1.2-3.1-.12-.3-.52-1.52.12-3.17 0 0 .97-.31 3.18 1.18a11.04 11.04 0 0 1 2.9-.39c.98.01 1.97.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.64 1.65.24 2.87.12 3.17.75.81 1.2 1.84 1.2 3.1 0 4.42-2.68 5.39-5.24 5.67.42.36.79 1.1.79 2.22 0 1.6-.01 2.89-.01 3.28 0 .31.21.68.8.56A10.53 10.53 0 0 0 23.5 12C23.5 5.73 18.27.5 12 .5Z"/>
-  </svg>
-  View source code on GitHub
-</a>
-
-
+    href="https://github.com/darkflareplays8/mrpacktozip"
+    target="_blank"
+    class="fixed bottom-4 left-4 bg-black/30 backdrop-blur-lg rounded-xl border border-red-600 shadow-2xl text-orange-400 px-4 py-2 text-sm font-bold glow hover:scale-105 hover:shadow-xl transition duration-200 flex items-center gap-2"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-orange-400" viewBox="0 0 24 24">
+      <path d="M12 .5C5.73.5.5 5.73.5 12.02c0 5.11 3.29 9.45 7.86 10.98.58.11.79-.25.79-.56 0-.28-.01-1.01-.02-1.99-3.2.7-3.88-1.54-3.88-1.54-.53-1.36-1.29-1.73-1.29-1.73-1.05-.72.08-.71.08-.71 1.17.08 1.79 1.2 1.79 1.2 1.04 1.78 2.74 1.26 3.41.96.11-.76.41-1.26.74-1.55-2.55-.29-5.23-1.28-5.23-5.69 0-1.26.45-2.29 1.2-3.1-.12-.3-.52-1.52.12-3.17 0 0 .97-.31 3.18 1.18a11.04 11.04 0 0 1 2.9-.39c.98.01 1.97.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.64 1.65.24 2.87.12 3.17.75.81 1.2 1.84 1.2 3.1 0 4.42-2.68 5.39-5.24 5.67.42.36.79 1.1.79 2.22 0 1.6-.01 2.89-.01 3.28 0 .31.21.68.8.56A10.53 10.53 0 0 0 23.5 12C23.5 5.73 18.27.5 12 .5Z"/>
+    </svg>
+    View source code on GitHub
+  </a>
 </body>
 </html>
