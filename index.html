@@ -77,50 +77,11 @@
     let zipBlob = null;
     let zipName = "";
 
-    function isValidURL(str) {
-      try {
-        const url = new URL(str);
-        return url.protocol === "http:" || url.protocol === "https:";
-      } catch {
-        return false;
-      }
-    }
-
-    function validateInputs() {
-      status.textContent = ""; // reset status
-
-      if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        if (!file.name.toLowerCase().endsWith(".mrpack")) {
-          status.textContent = "❌ Please upload a valid .mrpack file.";
-          convertBtn.disabled = true;
-          return false;
-        }
-      } else if (urlInput.value.trim().length > 0) {
-        const url = urlInput.value.trim();
-        if (!isValidURL(url)) {
-          status.textContent = "❌ Please enter a valid URL.";
-          convertBtn.disabled = true;
-          return false;
-        }
-        if (!url.toLowerCase().endsWith(".mrpack")) {
-          status.textContent = "❌ URL must point to a .mrpack file.";
-          convertBtn.disabled = true;
-          return false;
-        }
-      }
-
-      // If we reach here, inputs are valid or empty
-      status.textContent = "";
-      return true;
-    }
-
     function updateButtonState() {
       const hasFile = fileInput.files.length > 0;
       const hasURL = urlInput.value.trim().length > 0;
 
       if (hasFile || hasURL) {
-        if (!validateInputs()) return; // If invalid, stop here
         convertBtn.disabled = false;
         convertBtn.innerText = "⚡ Convert Now";
         convertBtn.classList.remove("bg-gray-600", "cursor-not-allowed");
@@ -149,18 +110,23 @@
           "glow"
         );
       }
-
-      // Reset download button and status if input valid
-      if (convertBtn.disabled) {
-        downloadBtn.style.display = "none";
-        status.textContent = "";
-        zipBlob = null;
-        zipName = "";
-      }
+      downloadBtn.style.display = "none";
+      status.textContent = "";
+      zipBlob = null;
+      zipName = "";
     }
 
     fileInput.addEventListener("change", updateButtonState);
     urlInput.addEventListener("input", updateButtonState);
+
+    function isValidURL(str) {
+      try {
+        const url = new URL(str);
+        return url.protocol === "http:" || url.protocol === "https:";
+      } catch {
+        return false;
+      }
+    }
 
     convertBtn.addEventListener("click", convert);
 
@@ -195,7 +161,10 @@
         status.textContent = "🌐 Downloading MRPack from URL...";
         try {
           const response = await fetch(url);
-          if (!response.ok) throw new Error("Failed to fetch file");
+          if (!response.ok) {
+            status.textContent = `❌ Error fetching file from URL: ${response.status} ${response.statusText}`;
+            return;
+          }
           fileBlob = await response.blob();
         } catch (err) {
           status.textContent = "❌ Error downloading file.";
@@ -290,7 +259,6 @@
       a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 10000);
 
-      // Hide the download button after click and update status
       downloadBtn.style.display = "none";
       status.textContent = "✅ Download started!";
     });
