@@ -227,7 +227,7 @@ function isValidURL(str) {
       setTimeout(() => URL.revokeObjectURL(a.href), 10000);
 
       downloadBtn.style.display = "none";
-      status.textContent = "✅ Download started!";
+      status.textContent = "✅ Download started! Your browser may scan for malware, but it will find nothing malicious!";
       fileInput.value = "";
       urlInput.value = "";
       updateButtonState();
