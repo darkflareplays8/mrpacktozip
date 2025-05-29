@@ -1,14 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>MRPack to Mods ZIP</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Convert .mrpack files into downloadable mod ZIPs in one click. Fast and easy to use! Made by darkflareplays8!">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.0/jszip.min.js"></script>
-  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <style>
     body {
       background: linear-gradient(to bottom right, #1a0000, #330000);
@@ -16,39 +15,43 @@
     .glow {
       box-shadow: 0 0 10px #ff6b00, 0 0 20px #ff6b00, 0 0 30px #ff6b00;
     }
+    .fade-in {
+      animation: fadeIn 0.7s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
   </style>
 </head>
 <body class="text-white flex flex-col items-center justify-center min-h-screen p-6 font-mono">
 
-  <div class="bg-black/30 backdrop-blur-lg rounded-xl border border-red-600 shadow-2xl p-8 w-full max-w-md text-center glow">
-    <h1 class="text-3xl font-extrabold text-orange-500 mb-1">🔥 MRPack to Mods ZIP</h1>
+  <div id="container" class="fade-in bg-black/30 backdrop-blur-lg rounded-xl border border-red-600 shadow-2xl px-4 py-6 sm:p-8 w-full max-w-md text-center glow">
+    <h1 class="text-2xl sm:text-3xl font-extrabold text-orange-500 mb-1">🔥 MRPack to Mods ZIP</h1>
     <p class="text-sm text-red-400 italic mb-4">by DarkFlarePlays8</p>
     <p class="text-red-300 mb-4">Upload a <code>.mrpack</code> file or paste a direct URL</p>
 
-    <!-- File Upload -->
     <input type="file" id="fileInput" accept=".mrpack"
            class="block w-full mb-3 text-sm text-white file:mr-4 file:py-2 file:px-4
                   file:rounded-full file:border-0 file:font-bold
                   file:bg-orange-600 file:text-white
                   hover:file:bg-orange-700 transition duration-200"/>
 
-    <!-- OR Separator -->
     <div class="relative flex items-center justify-center my-3">
       <div class="w-full border-t border-red-600"></div>
       <span class="absolute px-3 bg-[#1a0000] text-red-400 font-bold">OR</span>
     </div>
 
-    <!-- URL Input -->
     <input type="text" id="urlInput" placeholder="https://example.com/pack.mrpack"
-           class="w-full mb-4 px-4 py-2 rounded bg-gray-800 border border-red-600 text-white placeholder-gray-400"/>
+           class="w-full mb-2 px-4 py-2 rounded bg-gray-800 border border-red-600 text-white placeholder-gray-400"/>
 
-    <!-- Convert Button -->
+    <p id="error" class="mb-3 text-sm text-red-500 font-bold hidden"></p>
+
     <button id="convertBtn" disabled
             class="w-full bg-gray-600 cursor-not-allowed text-white font-bold py-2 px-4 rounded-full transition duration-200">
       Choose file or enter URL
     </button>
 
-    <!-- Status Text -->
     <p id="status" class="mt-4 text-sm text-orange-300"></p>
   </div>
 
@@ -56,97 +59,152 @@
     const fileInput = document.getElementById('fileInput');
     const urlInput = document.getElementById('urlInput');
     const convertBtn = document.getElementById('convertBtn');
-
-    function updateButtonState() {
-      const hasFile = fileInput.files.length > 0;
-      const hasURL = urlInput.value.trim().length > 0;
-
-      if (hasFile || hasURL) {
-        convertBtn.disabled = false;
-        convertBtn.innerText = "⚡ Convert Now";
-        convertBtn.classList.remove('bg-gray-600', 'cursor-not-allowed');
-        convertBtn.classList.add(
-          'bg-gradient-to-r', 'from-red-600', 'via-orange-500', 'to-yellow-400',
-          'text-black', 'hover:scale-105', 'hover:shadow-xl', 'glow'
-        );
-      } else {
-        convertBtn.disabled = true;
-        convertBtn.innerText = "Choose file or enter URL";
-        convertBtn.classList.add('bg-gray-600', 'cursor-not-allowed');
-        convertBtn.classList.remove(
-          'bg-gradient-to-r', 'from-red-600', 'via-orange-500', 'to-yellow-400',
-          'text-black', 'hover:scale-105', 'hover:shadow-xl', 'glow'
-        );
-      }
-    }
+    const error = document.getElementById('error');
+    const status = document.getElementById('status');
 
     fileInput.addEventListener('change', updateButtonState);
     urlInput.addEventListener('input', updateButtonState);
     convertBtn.addEventListener('click', convert);
 
+    function isValidUrl(string) {
+      try {
+        new URL(string);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function showError(msg) {
+      error.textContent = msg;
+      error.classList.remove('hidden');
+      error.classList.add('animate-pulse');
+      document.getElementById('container').scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => {
+        error.classList.remove('animate-pulse');
+      }, 1000);
+    }
+
+    function hideError() {
+      error.textContent = '';
+      error.classList.add('hidden');
+    }
+
+    function updateButtonState() {
+      hideError();
+      const file = fileInput.files[0];
+      const url = urlInput.value.trim();
+      let valid = false;
+
+      if (file) {
+        if (!file.name.endsWith('.mrpack')) {
+          showError('❌ File must be a .mrpack');
+        } else {
+          valid = true;
+        }
+      } else if (url) {
+        if (!isValidUrl(url)) {
+          showError('❌ URL is not valid');
+        } else if (!url.toLowerCase().endsWith('.mrpack')) {
+          showError('❌ URL must end with .mrpack');
+        } else {
+          valid = true;
+        }
+      }
+
+      convertBtn.disabled = !valid;
+      convertBtn.innerText = valid ? '⚡ Convert Now' : 'Choose file or enter URL';
+      convertBtn.className = valid
+        ? 'w-full bg-gradient-to-r from-red-600 via-orange-500 to-yellow-400 text-black font-bold py-2 px-4 rounded-full transition duration-200 hover:scale-105 hover:shadow-xl glow'
+        : 'w-full bg-gray-600 cursor-not-allowed text-white font-bold py-2 px-4 rounded-full transition duration-200';
+    }
+
     async function convert() {
-      const status = document.getElementById('status');
+      hideError();
+      status.textContent = '';
       let fileBlob, baseName;
 
       if (fileInput.files.length > 0) {
         const file = fileInput.files[0];
+        if (!file.name.endsWith('.mrpack')) {
+          showError('❌ File must be a .mrpack');
+          return;
+        }
         baseName = file.name.replace(/\.mrpack$/, '');
         fileBlob = file;
       } else if (urlInput.value.trim()) {
         const url = urlInput.value.trim();
+        if (!isValidUrl(url)) {
+          showError('❌ URL is not valid');
+          return;
+        }
+        if (!url.toLowerCase().endsWith('.mrpack')) {
+          showError('❌ URL must end with .mrpack');
+          return;
+        }
         baseName = url.split('/').pop().replace(/\.mrpack$/, '');
         status.textContent = '🌐 Downloading MRPack from URL...';
+        document.getElementById('container').scrollIntoView({ behavior: 'smooth' });
         try {
           const response = await fetch(url);
           if (!response.ok) throw new Error('Failed to fetch file');
           fileBlob = await response.blob();
         } catch (err) {
-          status.textContent = '❌ Error downloading file.';
+          showError('❌ Error downloading file.');
           console.error(err);
           return;
         }
       } else {
-        return alert('Please upload a file or paste a URL');
-      }
-
-      status.textContent = '📦 Reading MRPack...';
-
-      const zip = await JSZip.loadAsync(fileBlob);
-      const indexFile = zip.file('modrinth.index.json');
-      if (!indexFile) {
-        status.textContent = '❌ modrinth.index.json not found.';
+        showError('❌ No input provided.');
         return;
       }
 
-      const index = JSON.parse(await indexFile.async('string'));
-      const modsZip = new JSZip();
-      const modsFolder = modsZip.folder('mods');
+      try {
+        status.textContent = '📦 Reading MRPack...';
+        document.getElementById('container').scrollIntoView({ behavior: 'smooth' });
 
-      let downloaded = 0;
-      for (const mod of index.files) {
-        if (!mod.downloads?.[0]) continue;
-        const url = mod.downloads[0];
-        try {
-          downloaded++;
-          status.textContent = `🔥 Downloading: ${mod.path} (${downloaded}/${index.files.length})`;
-          const response = await fetch(url);
-          const blob = await response.blob();
-          const arrayBuffer = await blob.arrayBuffer();
-          modsFolder.file(mod.path.split('/').pop(), arrayBuffer);
-        } catch (err) {
-          console.error(`❌ Failed to download ${mod.path}`, err);
+        const zip = await JSZip.loadAsync(fileBlob);
+        const indexFile = zip.file('modrinth.index.json');
+        if (!indexFile) {
+          showError('❌ modrinth.index.json not found.');
+          return;
         }
+
+        const index = JSON.parse(await indexFile.async('string'));
+        const modsZip = new JSZip();
+        const modsFolder = modsZip.folder('mods');
+
+        let downloaded = 0;
+        for (const mod of index.files) {
+          if (!mod.downloads?.[0]) continue;
+          const url = mod.downloads[0];
+          try {
+            downloaded++;
+            status.textContent = `🔥 Downloading: ${mod.path} (${downloaded}/${index.files.length})`;
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const arrayBuffer = await blob.arrayBuffer();
+            modsFolder.file(mod.path.split('/').pop(), arrayBuffer);
+          } catch (err) {
+            console.error(`❌ Failed to download ${mod.path}`, err);
+          }
+        }
+
+        status.textContent = '🔥 Zipping mods...';
+
+        const content = await modsZip.generateAsync({ type: 'blob' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(content);
+        a.download = `${baseName}.zip`;
+        a.click();
+
+        status.textContent = '✅ ZIP ready! Download started.';
+        document.getElementById('container').scrollIntoView({ behavior: 'smooth' });
+
+      } catch (err) {
+        showError('❌ Error processing MRPack.');
+        console.error(err);
       }
-
-      status.textContent = '🔥 Zipping mods...';
-
-      const content = await modsZip.generateAsync({ type: 'blob' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(content);
-      a.download = `${baseName}.zip`;
-      a.click();
-
-      status.textContent = '✅ ZIP ready! Download started.';
     }
   </script>
 </body>
