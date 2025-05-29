@@ -152,12 +152,12 @@ function isValidURL(str) {
         const url = urlInput.value.trim();
         baseName = url.split("/").pop().replace(/\.mrpack$/i, "");
         try {
-          status.textContent = "🌐 Downloading MRPack...";
+          status.textContent = "🌐 Fetching MRPack...";
           const response = await fetch(url);
           if (!response.ok) throw new Error();
           fileBlob = await response.blob();
         } catch {
-          status.textContent = "❌ Failed to download .mrpack file.";
+          status.textContent = "❌ Failed to fetch .mrpack file.";
           return;
         }
       }
@@ -192,7 +192,7 @@ function isValidURL(str) {
         const url = mod.downloads?.[0];
         if (!url) continue;
         try {
-          status.textContent = `📥 Downloading ${mod.path} (${++count}/${index.files.length})...`;
+          status.textContent = `📥 Fetching ${mod.path} (${++count}/${index.files.length})...`;
           const resp = await fetch(url);
           if (!resp.ok) throw new Error();
           const buffer = await resp.arrayBuffer();
