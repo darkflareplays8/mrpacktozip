@@ -248,7 +248,10 @@
     }
 
     downloadBtn.addEventListener("click", () => {
-      if (!zipBlob) return;
+      if (!zipBlob) {
+        status.textContent = "❌ No ZIP file available to download.";
+        return;
+      }
       const a = document.createElement("a");
       a.href = URL.createObjectURL(zipBlob);
       a.download = zipName;
@@ -260,6 +263,16 @@
       // Hide the download button after click and update status
       downloadBtn.style.display = "none";
       status.textContent = "✅ Download started!";
+    });
+
+    window.addEventListener("unhandledrejection", event => {
+      status.textContent = "❌ Unexpected error occurred.";
+      console.error("Unhandled rejection:", event.reason);
+    });
+
+    window.addEventListener("error", event => {
+      status.textContent = "❌ Unexpected error occurred.";
+      console.error("Error event:", event.error);
     });
   </script>
 </body>
