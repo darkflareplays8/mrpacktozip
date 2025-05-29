@@ -79,14 +79,18 @@
     let zipBlob = null;
     let zipName = "";
 
-    function isValidURL(str) {
-      try {
-        const url = new URL(str);
-        return url.protocol === "http:" || url.protocol === "https:";
-      } catch {
-        return false;
-      }
-    }
+function isValidURL(str) {
+  try {
+    const url = new URL(str);
+    const hasValidProtocol = url.protocol === "http:" || url.protocol === "https:";
+    const hostnameParts = url.hostname.split(".");
+    const hasTLD = hostnameParts.length > 1 && hostnameParts[hostnameParts.length - 1].length >= 2;
+    return hasValidProtocol && hasTLD;
+  } catch {
+    return false;
+  }
+}
+
 
     function validateInputs() {
       if (fileInput.files.length > 0) {
