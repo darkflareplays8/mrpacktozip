@@ -15,11 +15,9 @@
     .glow {
       box-shadow: 0 0 10px #ff6b00, 0 0 20px #ff6b00, 0 0 30px #ff6b00;
     }
-   button {
+    button {
       cursor: pointer;
-   }
-
-  
+    }
   </style>
 </head>
 <body class="text-white flex flex-col items-center justify-center min-h-screen p-6 font-mono">
@@ -226,19 +224,41 @@
       const modsFolder = modsZip.folder("mods");
 
       let count = 0;
+      // Collect mod info for modlist.txt and modinfo.txt
+      const modNames = [];
+      const modInfoLines = [];
+
       for (const mod of index.files) {
         const url = mod.downloads?.[0];
+        const fileName = mod.path.split("/").pop();
+        const modId = mod.project_id || "unknown";
+        const modVersion = mod.version_id || "unknown";
+        const modName = fileName;
         if (!url) continue;
+        modNames.push(modName);
+        modInfoLines.push(
+          `ID: ${modId}\nName: ${modName}\nVersion: ${modVersion}\nFile: ${fileName}\nURL: ${url}\n`
+        );
         try {
-          status.textContent = `📥 Fetching ${mod.path} (${++count}/${index.files.length})...`;
+          status.textContent = `📥 Fetching ${fileName} (${++count}/${index.files.length})...`;
           const resp = await fetch(url);
           if (!resp.ok) throw new Error();
           const buffer = await resp.arrayBuffer();
-          modsFolder.file(mod.path.split("/").pop(), buffer);
+          modsFolder.file(fileName, buffer);
         } catch (e) {
-          console.warn(`Failed to download ${mod.path}`);
+          console.warn(`Failed to download ${fileName}`);
         }
       }
+
+      // Add modlist.txt and modinfo.txt to the ZIP root
+      modsZip.file(
+        "modlist.txt",
+        modNames.join("\n")
+      );
+      modsZip.file(
+        "modinfo.txt",
+        modInfoLines.join("\n")
+      );
 
       try {
         zipBlob = await modsZip.generateAsync({ type: "blob" });
